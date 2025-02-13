@@ -1,233 +1,241 @@
 using System;
 using UnityEngine;
 
-    [RequireComponent(typeof(Rigidbody2D), typeof(Collider2D))]
-    public class PlayerController : MonoBehaviour, IPlayerController
+[RequireComponent(typeof(Rigidbody2D), typeof(Collider2D))]
+public class PlayerController : MonoBehaviour, IPlayerController
+{
+    [SerializeField] private ScriptableStats _stats;
+    private Rigidbody2D _rb;
+    private CapsuleCollider2D _col;
+    private FrameInput _frameInput;
+    private Vector2 _frameVelocity;
+    private bool _cachedQueryStartInColliders;
+
+    #region Interface
+
+    public Vector2 FrameInput => _frameInput.Move;
+    public event Action<bool, float> GroundedChanged;
+    public event Action Jumped;
+
+    #endregion
+
+    private float _time;
+    private bool _isAttacking;
+    private PlayerAttacker _playerAttacker;
+    private bool _flipX;
+
+    private void Awake()
     {
-        [SerializeField] private ScriptableStats _stats;
-        private Rigidbody2D _rb;
-        private CapsuleCollider2D _col;
-        private FrameInput _frameInput;
-        private Vector2 _frameVelocity;
-        private bool _cachedQueryStartInColliders;
+        _playerAttacker = GetComponent<PlayerAttacker>();
+        _rb = GetComponent<Rigidbody2D>();
+        _col = GetComponent<CapsuleCollider2D>();
 
-        #region Interface
+        _cachedQueryStartInColliders = Physics2D.queriesStartInColliders;
+    }
+    private void OnEnable()
+    {
+        _playerAttacker.AttackingChanged += ChangeAttacking;
+    }
 
-        public Vector2 FrameInput => _frameInput.Move;
-        public event Action<bool, float> GroundedChanged;
-        public event Action Jumped;
+    private void OnDisable()
+    {
+        _playerAttacker.AttackingChanged -= ChangeAttacking;
+    }
 
-        #endregion
+    private void Update()
+    {
+        _time += Time.deltaTime;
+        GatherInput();
+        HandleSpriteFlip();
+        _playerAttacker.UpdateFlipped(_flipX);
+    }
 
-        private float _time;
-        private bool _isAttacking;
-        private PlayerAttacker _playerAttacker;
-
-        private void Awake()
+    private void GatherInput()
+    {
+        if (Input.GetButtonDown("Fire1") && !_isAttacking)
         {
-            _playerAttacker = GetComponent<PlayerAttacker>();
-            _rb = GetComponent<Rigidbody2D>();
-            _col = GetComponent<CapsuleCollider2D>();
-
-            _cachedQueryStartInColliders = Physics2D.queriesStartInColliders;
+            TryStartAttack();
         }
-        private void OnEnable()
+        _frameInput = new FrameInput
         {
-            _playerAttacker.AttackingChanged += ChangeAttacking;
-        }
+            JumpDown = Input.GetButtonDown("Jump") || Input.GetKeyDown(KeyCode.C),
+            JumpHeld = Input.GetButton("Jump") || Input.GetKey(KeyCode.C),
+            ShiftHeld = Input.GetKey(KeyCode.LeftShift),
+            Move = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"))
+        };
 
-        private void OnDisable()
+        if (_stats.SnapInput)
         {
-            _playerAttacker.AttackingChanged -= ChangeAttacking;
-        }
-        
-        private void Update()
-        {
-            _time += Time.deltaTime;
-            GatherInput();
-        }
-
-        private void GatherInput()
-        {
-            if (Input.GetButtonDown("Fire1") && !_isAttacking)
-            {
-                TryStartAttack();
-            }
-            _frameInput = new FrameInput
-            {
-                JumpDown = Input.GetButtonDown("Jump") || Input.GetKeyDown(KeyCode.C),
-                JumpHeld = Input.GetButton("Jump") || Input.GetKey(KeyCode.C),
-                ShiftHeld = Input.GetKey(KeyCode.LeftShift),
-                Move = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"))
-            };
-
-            if (_stats.SnapInput)
-            {
-                _frameInput.Move.x = Mathf.Abs(_frameInput.Move.x) < _stats.HorizontalDeadZoneThreshold ? 0 : Mathf.Sign(_frameInput.Move.x);
-                _frameInput.Move.y = Mathf.Abs(_frameInput.Move.y) < _stats.VerticalDeadZoneThreshold ? 0 : Mathf.Sign(_frameInput.Move.y);
-            }
-
-            if (_frameInput.JumpDown)
-            {
-                _jumpToConsume = true;
-                _timeJumpWasPressed = _time;
-            }
+            _frameInput.Move.x = Mathf.Abs(_frameInput.Move.x) < _stats.HorizontalDeadZoneThreshold ? 0 : Mathf.Sign(_frameInput.Move.x);
+            _frameInput.Move.y = Mathf.Abs(_frameInput.Move.y) < _stats.VerticalDeadZoneThreshold ? 0 : Mathf.Sign(_frameInput.Move.y);
         }
 
-        private void FixedUpdate()
+        if (_frameInput.JumpDown)
         {
-            CheckCollisions();
-
-            HandleJump();
-            HandleDirection();
-            HandleGravity();
-            
-            ApplyMovement();
+            _jumpToConsume = true;
+            _timeJumpWasPressed = _time;
         }
-        private void ChangeAttacking(bool isAttacking)
+    }
+
+    private void HandleSpriteFlip()
+    {
+        if (FrameInput.x != 0) _flipX = FrameInput.x < 0;
+    }
+
+    private void FixedUpdate()
+    {
+        CheckCollisions();
+
+        HandleJump();
+        HandleDirection();
+        HandleGravity();
+
+        ApplyMovement();
+    }
+    private void ChangeAttacking(bool isAttacking)
+    {
+        _isAttacking = isAttacking;
+    }
+    private void TryStartAttack()
+    {
+        if (_grounded)
         {
-            _isAttacking = isAttacking;
+            _playerAttacker.PerformAttack();
         }
-        private void TryStartAttack()
+    }
+
+    #region Collisions
+
+    private float _frameLeftGrounded = float.MinValue;
+    private bool _grounded;
+
+    private void CheckCollisions()
+    {
+        Physics2D.queriesStartInColliders = false;
+
+        // Ground and Ceiling
+        bool groundHit = Physics2D.CapsuleCast(_col.bounds.center, _col.size, _col.direction, 0, Vector2.down, _stats.GrounderDistance, ~_stats.PlayerLayer);
+        bool ceilingHit = Physics2D.CapsuleCast(_col.bounds.center, _col.size, _col.direction, 0, Vector2.up, _stats.GrounderDistance, ~_stats.PlayerLayer);
+        //Debug.DrawLine(_col.bounds.center, _col.bounds.center - Vector3.down * _stats.GrounderDistance);
+
+        // Hit a Ceiling
+        if (ceilingHit) _frameVelocity.y = Mathf.Min(0, _frameVelocity.y);
+
+        // Landed on the Ground
+        if (!_grounded && groundHit)
         {
-            if (_grounded)
-            {
-                _playerAttacker.PerformAttack();
-            }
-        }
-
-        #region Collisions
-
-        private float _frameLeftGrounded = float.MinValue;
-        private bool _grounded;
-
-        private void CheckCollisions()
-        {
-            Physics2D.queriesStartInColliders = false;
-
-            // Ground and Ceiling
-            bool groundHit = Physics2D.CapsuleCast(_col.bounds.center, _col.size, _col.direction, 0, Vector2.down, _stats.GrounderDistance, ~_stats.PlayerLayer);
-            bool ceilingHit = Physics2D.CapsuleCast(_col.bounds.center, _col.size, _col.direction, 0, Vector2.up, _stats.GrounderDistance, ~_stats.PlayerLayer);
-            //Debug.DrawLine(_col.bounds.center, _col.bounds.center - Vector3.down * _stats.GrounderDistance);
-
-            // Hit a Ceiling
-            if (ceilingHit) _frameVelocity.y = Mathf.Min(0, _frameVelocity.y);
-
-            // Landed on the Ground
-            if (!_grounded && groundHit)
-            {
-                _grounded = true;
-                _coyoteUsable = true;
-                _bufferedJumpUsable = true;
-                _endedJumpEarly = false;
-                GroundedChanged?.Invoke(true, Mathf.Abs(_frameVelocity.y));
-            }
-            // Left the Ground
-            else if (_grounded && !groundHit)
-            {
-                _grounded = false;
-                _frameLeftGrounded = _time;
-                GroundedChanged?.Invoke(false, 0);
-            }
-
-            Physics2D.queriesStartInColliders = _cachedQueryStartInColliders;
-        }
-
-        #endregion
-
-
-        #region Jumping
-
-        private bool _jumpToConsume;
-        private bool _bufferedJumpUsable;
-        private bool _endedJumpEarly;
-        private bool _coyoteUsable;
-        private float _timeJumpWasPressed;
-
-        private bool HasBufferedJump => _bufferedJumpUsable && _time < _timeJumpWasPressed + _stats.JumpBuffer;
-        private bool CanUseCoyote => _coyoteUsable && !_grounded && _time < _frameLeftGrounded + _stats.CoyoteTime;
-
-        private void HandleJump()
-        {
-            if (!_endedJumpEarly && !_grounded && !_frameInput.JumpHeld && _rb.velocity.y > 0) _endedJumpEarly = true;
-
-            if (!_jumpToConsume && !HasBufferedJump) return;
-
-            if (_grounded || CanUseCoyote) ExecuteJump();
-
-            _jumpToConsume = false;
-        }
-
-        private void ExecuteJump()
-        {
+            _grounded = true;
+            _coyoteUsable = true;
+            _bufferedJumpUsable = true;
             _endedJumpEarly = false;
-            _timeJumpWasPressed = 0;
-            _bufferedJumpUsable = false;
-            _coyoteUsable = false;
-            _frameVelocity.y = _stats.JumpPower;
-            Jumped?.Invoke();
+            GroundedChanged?.Invoke(true, Mathf.Abs(_frameVelocity.y));
         }
-
-        #endregion
-
-        #region Horizontal
-
-        private void HandleDirection()
+        // Left the Ground
+        else if (_grounded && !groundHit)
         {
-            if (_frameInput.Move.x == 0)
-            {
-                var deceleration = _grounded ? _stats.GroundDeceleration : _stats.AirDeceleration;
-                _frameVelocity.x = Mathf.MoveTowards(_frameVelocity.x, 0, deceleration * Time.fixedDeltaTime);
-            }
-            else
-            {
-                var accelerationMultiplayer = _frameInput.ShiftHeld ? _stats.AccelerationMultiplayer : 1f;
-                _frameVelocity.x = Mathf.MoveTowards(_frameVelocity.x, _frameInput.Move.x * _stats.MaxSpeed * accelerationMultiplayer, _stats.Acceleration * Time.fixedDeltaTime * accelerationMultiplayer);
-            }
+            _grounded = false;
+            _frameLeftGrounded = _time;
+            GroundedChanged?.Invoke(false, 0);
         }
 
-        #endregion
+        Physics2D.queriesStartInColliders = _cachedQueryStartInColliders;
+    }
 
-        #region Gravity
+    #endregion
 
-        private void HandleGravity()
+
+    #region Jumping
+
+    private bool _jumpToConsume;
+    private bool _bufferedJumpUsable;
+    private bool _endedJumpEarly;
+    private bool _coyoteUsable;
+    private float _timeJumpWasPressed;
+
+    private bool HasBufferedJump => _bufferedJumpUsable && _time < _timeJumpWasPressed + _stats.JumpBuffer;
+    private bool CanUseCoyote => _coyoteUsable && !_grounded && _time < _frameLeftGrounded + _stats.CoyoteTime;
+
+    private void HandleJump()
+    {
+        if (!_endedJumpEarly && !_grounded && !_frameInput.JumpHeld && _rb.velocity.y > 0) _endedJumpEarly = true;
+
+        if (!_jumpToConsume && !HasBufferedJump) return;
+
+        if (_grounded || CanUseCoyote) ExecuteJump();
+
+        _jumpToConsume = false;
+    }
+
+    private void ExecuteJump()
+    {
+        _endedJumpEarly = false;
+        _timeJumpWasPressed = 0;
+        _bufferedJumpUsable = false;
+        _coyoteUsable = false;
+        _frameVelocity.y = _stats.JumpPower;
+        Jumped?.Invoke();
+    }
+
+    #endregion
+
+    #region Horizontal
+
+    private void HandleDirection()
+    {
+        if (_frameInput.Move.x == 0)
         {
-            if (_grounded && _frameVelocity.y <= 0f)
-            {
-                _frameVelocity.y = _stats.GroundingForce;
-            }
-            else
-            {
-                var inAirGravity = _stats.FallAcceleration;
-                if (_endedJumpEarly && _frameVelocity.y > 0) inAirGravity *= _stats.JumpEndEarlyGravityModifier;
-                _frameVelocity.y = Mathf.MoveTowards(_frameVelocity.y, -_stats.MaxFallSpeed, inAirGravity * Time.fixedDeltaTime);
-            }
+            var deceleration = _grounded ? _stats.GroundDeceleration : _stats.AirDeceleration;
+            _frameVelocity.x = Mathf.MoveTowards(_frameVelocity.x, 0, deceleration * Time.fixedDeltaTime);
         }
+        else
+        {
+            var accelerationMultiplayer = _frameInput.ShiftHeld ? _stats.AccelerationMultiplayer : 1f;
+            _frameVelocity.x = Mathf.MoveTowards(_frameVelocity.x, _frameInput.Move.x * _stats.MaxSpeed * accelerationMultiplayer, _stats.Acceleration * Time.fixedDeltaTime * accelerationMultiplayer);
+        }
+    }
 
-        #endregion
+    #endregion
 
-        private void ApplyMovement() => _rb.velocity = _frameVelocity;
+    #region Gravity
+
+    private void HandleGravity()
+    {
+        if (_grounded && _frameVelocity.y <= 0f)
+        {
+            _frameVelocity.y = _stats.GroundingForce;
+        }
+        else
+        {
+            var inAirGravity = _stats.FallAcceleration;
+            if (_endedJumpEarly && _frameVelocity.y > 0) inAirGravity *= _stats.JumpEndEarlyGravityModifier;
+            _frameVelocity.y = Mathf.MoveTowards(_frameVelocity.y, -_stats.MaxFallSpeed, inAirGravity * Time.fixedDeltaTime);
+        }
+    }
+
+    #endregion
+
+    private void ApplyMovement() => _rb.velocity = _frameVelocity;
 
 #if UNITY_EDITOR
-        private void OnValidate()
-        {
-            if (_stats == null) Debug.LogWarning("Please assign a ScriptableStats asset to the Player Controller's Stats slot", this);
-        }
+    private void OnValidate()
+    {
+        if (_stats == null) Debug.LogWarning("Please assign a ScriptableStats asset to the Player Controller's Stats slot", this);
+    }
 #endif
-    }
+}
 
-    public struct FrameInput
-    {
-        public bool JumpDown;
-        public bool JumpHeld;
-        public bool ShiftHeld;
-        public Vector2 Move;
-    }
+public struct FrameInput
+{
+    public bool JumpDown;
+    public bool JumpHeld;
+    public bool ShiftHeld;
+    public Vector2 Move;
+}
 
-    public interface IPlayerController
-    {
-        public event Action<bool, float> GroundedChanged;
+public interface IPlayerController
+{
+    public event Action<bool, float> GroundedChanged;
 
-        public event Action Jumped;
-        public Vector2 FrameInput { get; }
-    }
+    public event Action Jumped;
+    public Vector2 FrameInput { get; }
+}

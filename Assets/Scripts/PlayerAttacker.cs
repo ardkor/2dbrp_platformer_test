@@ -8,16 +8,23 @@ public class PlayerAttacker : MonoBehaviour
     public float attackRange = 0.5f; // Радиус удара
     public LayerMask enemyLayer; // Слой врагов
     public int attackDamage = 20; // Урон атаки
-    public float attackDuration = 0.5f; // Время действия атаки
+    public float attackDuration = 0.6f; // Время действия атаки
 
     private bool isAttacking = false; // Чтобы не спамить атаку
 
     public event Action<bool> AttackingChanged;
+    private Vector3 attackPosition;
 
-    private void Update()
+    private float attackDelay = 0.5f;
+    private bool _flipped; 
+
+    private void Start()
     {
-        // Проверяем, нажата ли клавиша атаки и не происходит ли уже атака
-        
+        attackPosition = attackPoint.position;
+    }
+    public void UpdateFlipped(bool flipped) 
+    {
+        _flipped = flipped;
     }
     public void PerformAttack()
     {
@@ -29,20 +36,19 @@ public class PlayerAttacker : MonoBehaviour
         isAttacking = true;
         AttackingChanged?.Invoke(isAttacking);
 
-        // Находим врагов в зоне удара
-        Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(attackPoint.position, attackRange, enemyLayer);
+        yield return new WaitForSeconds(attackDelay);
+        attackPosition = _flipped ? new Vector3(transform.position.x + (transform.position.x - attackPoint.position.x), attackPoint.position.y) : attackPoint.position;
 
-        // Наносим урон всем врагам в зоне
+        Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(attackPosition, attackRange, enemyLayer);
+
         foreach (Collider2D enemy in hitEnemies)
         {
             Debug.Log("Попал во врага: " + enemy.name);
-            enemy.GetComponent<Enemy>()?.TakeDamage(attackDamage); // Убедитесь, что у врага есть метод TakeDamage
+            enemy.GetComponent<Enemy>()?.TakeDamage(attackDamage); 
         }
 
-        // Ждем время действия атаки
-        yield return new WaitForSeconds(attackDuration);
+        yield return new WaitForSeconds(attackDuration - attackDelay);
 
-        // Завершаем атаку
         isAttacking = false;
         AttackingChanged?.Invoke(isAttacking);
     }
@@ -53,6 +59,8 @@ public class PlayerAttacker : MonoBehaviour
             return;
 
         Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(attackPoint.position, attackRange); // Для наглядности зоны удара
+        Gizmos.DrawWireSphere(attackPosition, attackRange); 
+        //Gizmos.DrawWireSphere(attackPoint.position, attackRange); 
+        //Gizmos.DrawWireSphere( new Vector3(attackPosition.x, attackPosition.y,  0), attackRange); 
     }
 }

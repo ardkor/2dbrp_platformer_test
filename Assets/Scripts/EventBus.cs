@@ -19,7 +19,4 @@ public class EventBus
     public Action PlayerDied;
     public Action<int> PlayerDamaged;
 
-/*    public event Action<bool, float> GroundedChanged;
-    public event Action Jumped;*/
-
 }

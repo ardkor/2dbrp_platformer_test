@@ -16,8 +16,6 @@ public class Player : MonoBehaviour
         currentHealth -= damage;
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
         EventBus.Instance.PlayerDamaged?.Invoke(currentHealth);
-        //EventBus.Instance.PlayerDied = Die;
-        //Debug.Log("HP: " + currentHealth);
 
         if (currentHealth <= 0)
         {
@@ -28,6 +26,5 @@ public class Player : MonoBehaviour
     private void Die()
     {
         EventBus.Instance.PlayerDied?.Invoke();
-        //Destroy(gameObject); 
     }
 }
