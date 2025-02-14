@@ -60,7 +60,5 @@ public class PlayerAttacker : MonoBehaviour
 
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(attackPosition, attackRange); 
-        //Gizmos.DrawWireSphere(attackPoint.position, attackRange); 
-        //Gizmos.DrawWireSphere( new Vector3(attackPosition.x, attackPosition.y,  0), attackRange); 
     }
 }

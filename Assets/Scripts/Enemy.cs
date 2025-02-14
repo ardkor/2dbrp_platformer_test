@@ -5,13 +5,12 @@ using UnityEngine;
 public class Enemy : MonoBehaviour
 {
     public int health = 1;
-    public int damage = 10; // Урон, который враг наносит
-    public float knockbackForce = 5f; // Сила отталкивания
-    public float knockbackDuration = 0.2f; // Время отталкивания
+    public int damage = 10; 
+    public float knockbackForce = 5f; 
+    public float knockbackDuration = 0.2f; 
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        // Наносим урон игроку
         Player player = collision.gameObject.GetComponent<Player>();
         if (player != null)
         {
@@ -22,8 +21,7 @@ public class Enemy : MonoBehaviour
                 Vector2 knockbackDirection = (collision.transform.position - transform.position).normalized; // Направление от врага к игроку
                 playerRb.AddForce(knockbackDirection * knockbackForce, ForceMode2D.Impulse);
 
-                // Если нужно замедлить движение игрока на время отталкивания
-                StartCoroutine(DisableMovementForKnockback(playerRb, knockbackDuration));
+               // StartCoroutine(DisableMovementForKnockback(playerRb, knockbackDuration));
             }
         }
 
@@ -49,7 +47,6 @@ public class Enemy : MonoBehaviour
     public void TakeDamage(int damage)
     {
         health -= damage;
-        Debug.Log("Осталось здоровья: " + health);
 
         if (health <= 0)
         {
@@ -59,7 +56,6 @@ public class Enemy : MonoBehaviour
 
     void Die()
     {
-        Debug.Log("Враг уничтожен!");
-        Destroy(gameObject); // Уничтожение врага
+        Destroy(gameObject); 
     }
 }

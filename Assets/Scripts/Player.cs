@@ -5,7 +5,7 @@ public class Player : MonoBehaviour
 {
     [SerializeField] private int maxHealth = 100;
     private int currentHealth;
-
+    private bool _dead;
     void Start()
     {
         currentHealth = maxHealth;
@@ -15,9 +15,9 @@ public class Player : MonoBehaviour
     {
         currentHealth -= damage;
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
-        EventBus.Instance.PlayerDamaged?.Invoke(currentHealth);
+        EventBus.Instance.PlayerDamaged?.Invoke(currentHealth, maxHealth);
 
-        if (currentHealth <= 0)
+        if (currentHealth <= 0 && !_dead)
         {
             Die();
         }
@@ -25,6 +25,7 @@ public class Player : MonoBehaviour
 
     private void Die()
     {
+        _dead = true;
         EventBus.Instance.PlayerDied?.Invoke();
     }
 }

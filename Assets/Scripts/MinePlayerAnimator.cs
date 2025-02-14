@@ -103,13 +103,11 @@ public class MinePlayerAnimator : MonoBehaviour
     }
     private void OnMeleeAttackChanged(bool isAttacking)
     {
-        if (isAttacking) { _anim.SetTrigger(MeleeAttackKey_1); _anim.ResetTrigger(MeleeAttackKey_1Ended); }
-        else { _anim.SetTrigger(MeleeAttackKey_1Ended); }
+        _anim.SetBool(MeleeAttackKey, isAttacking);
     }
 
     private static readonly int Died = Animator.StringToHash("Died");
-    private static readonly int MeleeAttackKey_1 = Animator.StringToHash("MeleeAttack1");
-    private static readonly int MeleeAttackKey_1Ended = Animator.StringToHash("MeleeAttack1Ended");
+    private static readonly int MeleeAttackKey = Animator.StringToHash("MeleeAttack1");
     private static readonly int GroundedKey = Animator.StringToHash("Grounded");
     private static readonly int IdleSpeedKey = Animator.StringToHash("IdleSpeed");
     private static readonly int JumpKey = Animator.StringToHash("Jump");

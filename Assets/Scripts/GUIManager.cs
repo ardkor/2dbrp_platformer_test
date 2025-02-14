@@ -10,4 +10,13 @@ public class GUIManager: MonoBehaviour
     {
         _hpSlider.value = ((float)Hp) / maxHp;
     }
+
+    private void OnEnable()
+    {
+        EventBus.Instance.PlayerDamaged += SetHpSliderValue;
+    }
+    private void OnDisable()
+    {
+        EventBus.Instance.PlayerDamaged -= SetHpSliderValue;
+    }
 }
