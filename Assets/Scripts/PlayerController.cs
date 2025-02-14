@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody2D), typeof(Collider2D))]
@@ -23,6 +24,8 @@ public class PlayerController : MonoBehaviour, IPlayerController
     private bool _isAttacking;
     private PlayerAttacker _playerAttacker;
     private bool _flipX;
+    private bool _inputEnabled;
+    private bool _knockbackEnabled;
 
     private void Awake()
     {
@@ -31,27 +34,50 @@ public class PlayerController : MonoBehaviour, IPlayerController
         _col = GetComponent<CapsuleCollider2D>();
 
         _cachedQueryStartInColliders = Physics2D.queriesStartInColliders;
+        _inputEnabled = true;
+        _knockbackEnabled = true;
     }
     private void OnEnable()
     {
         _playerAttacker.AttackingChanged += ChangeAttacking;
+        EventBus.Instance.PlayerDied += DisableInput;
     }
 
     private void OnDisable()
     {
         _playerAttacker.AttackingChanged -= ChangeAttacking;
+        EventBus.Instance.PlayerDied -= DisableInput;
     }
 
     private void Update()
     {
         _time += Time.deltaTime;
-        GatherInput();
-        HandleSpriteFlip();
+        if (_inputEnabled && _knockbackEnabled)
+        {
+            GatherInput();
+            HandleSpriteFlip();
+        }
         _playerAttacker.UpdateFlipped(_flipX);
+    }
+    private void DisableInput()
+    {
+        _inputEnabled = false;
+    }
+    public void DisableMovementForKnockback(float knockbackDuration)
+    {
+        StartCoroutine(DisableMovement(knockbackDuration/2));
+    }
+
+    private IEnumerator DisableMovement(float duration)
+    {
+        _knockbackEnabled = false;
+        yield return new WaitForSeconds(duration);
+        _knockbackEnabled = true;
     }
 
     private void GatherInput()
     {
+
         if (Input.GetButtonDown("Fire1") && !_isAttacking)
         {
             TryStartAttack();
@@ -75,6 +101,7 @@ public class PlayerController : MonoBehaviour, IPlayerController
             _jumpToConsume = true;
             _timeJumpWasPressed = _time;
         }
+
     }
 
     private void HandleSpriteFlip()
@@ -85,12 +112,16 @@ public class PlayerController : MonoBehaviour, IPlayerController
     private void FixedUpdate()
     {
         CheckCollisions();
-
-        HandleJump();
-        HandleDirection();
         HandleGravity();
 
-        ApplyMovement();
+        if (_inputEnabled && _knockbackEnabled)
+        {
+            HandleJump();
+            HandleDirection();
+            ApplyMovement();
+        }
+        else 
+            ApplyGravity();
     }
     private void ChangeAttacking(bool isAttacking)
     {
@@ -174,6 +205,7 @@ public class PlayerController : MonoBehaviour, IPlayerController
         _coyoteUsable = false;
         _frameVelocity.y = _stats.JumpPower;
         Jumped?.Invoke();
+        SoundManager.Instance.PlaySound(SoundManager.jumpSound);
     }
 
     #endregion
@@ -189,7 +221,12 @@ public class PlayerController : MonoBehaviour, IPlayerController
         }
         else
         {
-            var accelerationMultiplayer = _frameInput.ShiftHeld ? _stats.AccelerationMultiplayer : 1f;
+            var accelerationMultiplayer = 1f;
+            if (_frameInput.ShiftHeld)
+            {
+                SoundManager.Instance.PlaySound(SoundManager.accelerateSound);
+                accelerationMultiplayer = _stats.AccelerationMultiplayer;
+            }  
             _frameVelocity.x = Mathf.MoveTowards(_frameVelocity.x, _frameInput.Move.x * _stats.MaxSpeed * accelerationMultiplayer, _stats.Acceleration * Time.fixedDeltaTime * accelerationMultiplayer);
         }
     }
@@ -212,9 +249,27 @@ public class PlayerController : MonoBehaviour, IPlayerController
         }
     }
 
+/*    private Vector2 _addedVelocity;
+    public void AddVelocity(Vector2 velocity)
+    {
+        _addedVelocity = velocity;
+    }*/
     #endregion
 
     private void ApplyMovement() => _rb.velocity = _frameVelocity;
+    /*{
+        if (_addedVelocity.magnitude > 0)
+        {
+            _rb.velocity = _addedVelocity + _frameVelocity; //new Vector2(_addedVelocity.x + _frameVelocity.x, _rb.velocity.y + _frameVelocity.y);
+        }
+        else
+        {
+            _rb.velocity = _frameVelocity;
+            _addedVelocity = new Vector2(0, 0);
+        }
+    }*/
+    private void ApplyGravity() => _rb.velocity = new Vector2(_rb.velocity.x, _frameVelocity.y);
+    //private void ApplyAddedVelocity() => _rb.velocity = _addedVelocity + _frameVelocity;
 
 #if UNITY_EDITOR
     private void OnValidate()
