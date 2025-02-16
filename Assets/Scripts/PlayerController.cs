@@ -12,13 +12,9 @@ public class PlayerController : MonoBehaviour, IPlayerController
     private Vector2 _frameVelocity;
     private bool _cachedQueryStartInColliders;
 
-    #region Interface
-
     public Vector2 FrameInput => _frameInput.Move;
     public event Action<bool, float> GroundedChanged;
     public event Action Jumped;
-
-    #endregion
 
     private float _time;
     private bool _isAttacking;

@@ -4,7 +4,6 @@ using UnityEngine;
 public class LevelLoader : MonoBehaviour
 {
     [SerializeField] private GameObject[] levels;
-    [SerializeField] private Transform[] spawnPoints; //
     public GameObject currentLevel { get; private set; }
 
     public void LoadLevel(int index)

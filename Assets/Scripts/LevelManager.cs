@@ -1,26 +1,29 @@
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine.SceneManagement;
 using UnityEngine;
 
 public class LevelManager : MonoBehaviour
 {
     public Player player;
-    public Transform firstLevelSpawn;
-    public Transform secondLevelSpawn;
 
     public GameObject[] levels;
 
     public LevelLoader levelLoader;
+    private int currentLevel;
 
     private void Awake()
     {
-        levelLoader.LoadLevel(0);
+        currentLevel = 1;
+        LoadNextLevel();
     }
-   
-    private void LoadSecondLevel()
+
+    private void LoadNextLevel()
     {
-        player.transform.position = firstLevelSpawn.position;
+        levelLoader.LoadLevel(currentLevel - 1);
+        player.transform.position = levelLoader.currentLevel.GetComponentInChildren<SpawnPoint>().transform.position;
     }
+
     public void RestartLevel()
     {
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);

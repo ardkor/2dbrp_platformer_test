@@ -18,5 +18,6 @@ public class EventBus
     }
     public Action PlayerDied;
     public Action<int, int> PlayerDamaged;
+    public Action levelFinnished;
 
 }

@@ -23,11 +23,13 @@ public class Player : MonoBehaviour
     private void OnEnable()
     {
         EventBus.Instance.PlayerDied += EndInvincible;
+        EventBus.Instance.PlayerDied += OnDied;
     }
 
     private void OnDisable()
     {
         EventBus.Instance.PlayerDied -= EndInvincible;
+        EventBus.Instance.PlayerDied -= OnDied;
     }
 
     void Start()
@@ -115,7 +117,7 @@ public class Player : MonoBehaviour
 
         if (currentHealth <= 0 && !_dead)
         {
-            Die();
+            EventBus.Instance.PlayerDied?.Invoke();
         }
         else 
         {
@@ -123,10 +125,9 @@ public class Player : MonoBehaviour
         }
     }
 
-    private void Die()
+    private void OnDied()
     {
         _dead = true;
-        EventBus.Instance.PlayerDied?.Invoke();
         SoundManager.Instance.PlaySound(SoundManager.deathSound);
     }
 }
