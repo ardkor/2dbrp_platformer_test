@@ -2,15 +2,19 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class SoundManager : MonoBehaviour
+public class SoundManager
 {
     public const string deathSound = "death";
     public const string jumpSound = "jump";
     public const string accelerateSound = "accelerate";
+    public const string attackSound = "attack";
+    public const string landingSound = "landing";
+    public const string hitSound = "hit";
+    public const string teleportSound = "teleport";
 
     public const string firstLevelMusic = "slow";
     public const string secondLevelMusic = "action";
-    private const string menuMusic = "chill";
+    public const string menuMusic = "chill";
 
     private SoundManager() { }
 
@@ -26,17 +30,12 @@ public class SoundManager : MonoBehaviour
         }
     }
 
-    private void Start()
-    {
-        StartMusic(menuMusic);
-    }
-
     public void PlaySound(string soundName)
     {
         //                                   AudioClip  Transform Volume Is3D   Randomization
         //SoundInstance.InstantiateOnTransform(Clip_Fire, transform, -1, false, SoundInstance.Randomization.Medium);
         // Playing from the library would be like this:
-        SoundInstance.InstantiateOnTransform(SoundInstance.GetClipFromLibrary(soundName), transform, 1.0f, false, SoundInstance.Randomization.Medium);
+        SoundInstance.InstantiateOnPos(SoundInstance.GetClipFromLibrary(soundName), new Vector3(), 1.0f, false, SoundInstance.Randomization.Medium);
     }
 
     public void StartMusic(string musicName)

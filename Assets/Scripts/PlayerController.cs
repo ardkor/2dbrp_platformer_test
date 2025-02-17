@@ -151,6 +151,7 @@ public class PlayerController : MonoBehaviour, IPlayerController
         // Landed on the Ground
         if (!_grounded && groundHit)
         {
+            SoundManager.Instance.PlaySound(SoundManager.landingSound);
             _grounded = true;
             _coyoteUsable = true;
             _bufferedJumpUsable = true;

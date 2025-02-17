@@ -19,4 +19,18 @@ MonoBehaviour:
     Song: {fileID: 8300000, guid: 12a57d6790ab55a47a62f8e80a1465e5, type: 3}
   - name: chill
     Song: {fileID: 8300000, guid: 17156c79598dfec41bf56a65fd44f3a6, type: 3}
-  soundEffects: []
+  soundEffects:
+  - name: accelerate
+    Sound: {fileID: 8300000, guid: 5134835eedf8cb241ab31c0cad4a91a1, type: 3}
+  - name: jump
+    Sound: {fileID: 8300000, guid: 2ff7a2937a5e6ec4f9def75190322eb2, type: 3}
+  - name: death
+    Sound: {fileID: 8300000, guid: aa9f385550048fa41aab9a2484879d8f, type: 3}
+  - name: attack
+    Sound: {fileID: 8300000, guid: b2194c31ed8940141a68db9bd62cda87, type: 3}
+  - name: landing
+    Sound: {fileID: 8300000, guid: 0fd9ff04329bf3e45adf0454ff5f9802, type: 3}
+  - name: hit
+    Sound: {fileID: 8300000, guid: fc72c428abd54e249842e26b85a20a1d, type: 3}
+  - name: teleport
+    Sound: {fileID: 8300000, guid: eda3c836b0e11344e801d5f028d56715, type: 3}

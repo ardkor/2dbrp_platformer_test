@@ -28,6 +28,7 @@ public class PlayerAttacker : MonoBehaviour
     }
     public void PerformAttack()
     {
+        SoundManager.Instance.PlaySound(SoundManager.attackSound);
         StartCoroutine(AttackCoroutine());
     }
 
@@ -44,6 +45,7 @@ public class PlayerAttacker : MonoBehaviour
         foreach (Collider2D enemy in hitEnemies)
         {
             Debug.Log("Попал во врага: " + enemy.name);
+            SoundManager.Instance.PlaySound(SoundManager.hitSound);
             enemy.GetComponent<Enemy>()?.TakeDamage(attackDamage); 
         }
 
