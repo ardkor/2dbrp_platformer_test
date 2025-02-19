@@ -16,8 +16,9 @@ public class EventBus
             return _instance;
         }
     }
-    public Action PlayerDied;
-    public Action<int, int> PlayerDamaged;
-    public Action levelFinnished;
+    public Action playerDied;
+    public Action<int, int> playerDamaged;
+    public Action levelFinished;
+    public Action gameFinished;
 
 }

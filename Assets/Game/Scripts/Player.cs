@@ -16,20 +16,21 @@ public class Player : MonoBehaviour
 
     private float _invincibleDuration;
 
+    private Coroutine twinkleCoroutine;
     private Coroutine fadeCoroutine;
     public bool Invincible => _invincible;
     public bool Dead => _dead;
 
     private void OnEnable()
     {
-        EventBus.Instance.PlayerDied += EndInvincible;
-        EventBus.Instance.PlayerDied += OnDied;
+        EventBus.Instance.playerDied += EndInvincible;
+        EventBus.Instance.playerDied += OnDied;
     }
 
     private void OnDisable()
     {
-        EventBus.Instance.PlayerDied -= EndInvincible;
-        EventBus.Instance.PlayerDied -= OnDied;
+        EventBus.Instance.playerDied -= EndInvincible;
+        EventBus.Instance.playerDied -= OnDied;
     }
 
     void Start()
@@ -65,7 +66,7 @@ public class Player : MonoBehaviour
     {
         while (loopFade)
         {
-            yield return StartCoroutine(ChangeAlpha(minAlpha, fadeDuration));
+            yield return fadeCoroutine = StartCoroutine(ChangeAlpha(minAlpha, fadeDuration));
 
             yield return StartCoroutine(ChangeAlpha(maxAlpha, fadeDuration));
         }
@@ -95,6 +96,11 @@ public class Player : MonoBehaviour
 
     public void StopFading()
     {
+        if (twinkleCoroutine != null)
+        {
+            StopCoroutine(twinkleCoroutine);
+            twinkleCoroutine = null;
+        }
         if (fadeCoroutine != null)
         {
             StopCoroutine(fadeCoroutine);
@@ -104,20 +110,20 @@ public class Player : MonoBehaviour
 
     public void StartFading()
     {
-        if (fadeCoroutine == null)
+        if (twinkleCoroutine == null)
         {
-            fadeCoroutine = StartCoroutine(FadeLoop());
+            twinkleCoroutine = StartCoroutine(FadeLoop());
         }
     }
     public void TakeDamage(int damage, float knockbackDuration)
     {
         currentHealth -= damage;
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
-        EventBus.Instance.PlayerDamaged?.Invoke(currentHealth, maxHealth);
+        EventBus.Instance.playerDamaged?.Invoke(currentHealth, maxHealth);
 
         if (currentHealth <= 0 && !_dead)
         {
-            EventBus.Instance.PlayerDied?.Invoke();
+            EventBus.Instance.playerDied?.Invoke();
         }
         else 
         {

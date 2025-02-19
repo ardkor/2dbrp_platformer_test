@@ -37,7 +37,7 @@ public class MinePlayerAnimator : MonoBehaviour
         _player.Jumped += OnJumped;
         _player.GroundedChanged += OnGroundedChanged;
         _playerAttacker.AttackingChanged += OnMeleeAttackChanged;
-        EventBus.Instance.PlayerDied += OnDied;
+        EventBus.Instance.playerDied += OnDied;
     }
 
     private void OnDisable()
@@ -45,7 +45,7 @@ public class MinePlayerAnimator : MonoBehaviour
         _player.Jumped -= OnJumped;
         _player.GroundedChanged -= OnGroundedChanged;
         _playerAttacker.AttackingChanged -= OnMeleeAttackChanged;
-        EventBus.Instance.PlayerDied -= OnDied;
+        EventBus.Instance.playerDied -= OnDied;
     }
 
     private void Update()

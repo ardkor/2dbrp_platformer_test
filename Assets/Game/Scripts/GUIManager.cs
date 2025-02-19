@@ -18,12 +18,14 @@ public class GUIManager: MonoBehaviour
     }
     private void OnEnable()
     {
-        EventBus.Instance.PlayerDamaged += SetHpSliderValue;
-        EventBus.Instance.PlayerDied += ActivateRestartPanel;
+        EventBus.Instance.playerDamaged += SetHpSliderValue;
+        EventBus.Instance.playerDied += ActivateRestartPanel;
+        EventBus.Instance.gameFinished += ActivateRestartPanel;
     }
     private void OnDisable()
     {
-        EventBus.Instance.PlayerDamaged -= SetHpSliderValue;
-        EventBus.Instance.PlayerDied -= ActivateRestartPanel;
+        EventBus.Instance.playerDamaged -= SetHpSliderValue;
+        EventBus.Instance.playerDied -= ActivateRestartPanel;
+        EventBus.Instance.gameFinished -= ActivateRestartPanel;
     }
 }

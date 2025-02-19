@@ -12,9 +12,21 @@ public class LevelManager : MonoBehaviour
 
     private void Awake()
     {
-        currentLevel = 1;
-        //LoadNextLevel();
+        currentLevel = 0;
+        LoadNextLevel();
     }
+
+    private void OnEnable()
+    {
+        EventBus.Instance.levelFinished += LoadNextLevel;
+    }
+
+    private void OnDisable()
+    {
+        EventBus.Instance.levelFinished -= LoadNextLevel;
+
+    }
+
     private void Start()
     {
         SoundManager.Instance.StartMusic(SoundManager.menuMusic);
@@ -22,8 +34,13 @@ public class LevelManager : MonoBehaviour
 
     private void LoadNextLevel()
     {
+        if(currentLevel == 2)
+        {
+            EventBus.Instance.gameFinished?.Invoke();
+            return;
+        }
         SoundManager.Instance.PlaySound(SoundManager.teleportSound);
-        levelLoader.LoadLevel(currentLevel - 1);
+        levelLoader.LoadLevel(++currentLevel - 1);
         player.transform.position = levelLoader.currentLevel.GetComponentInChildren<SpawnPoint>().transform.position;
     }
 
