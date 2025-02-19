@@ -6,6 +6,7 @@ using UnityEngine;
 public class LevelManager : MonoBehaviour
 {
     public Player player;
+    public Camera camera;
 
     public LevelLoader levelLoader;
     private int currentLevel;
@@ -19,19 +20,25 @@ public class LevelManager : MonoBehaviour
     private void OnEnable()
     {
         EventBus.Instance.levelFinished += LoadNextLevel;
+        EventBus.Instance.playerDied += PlayMenuMusic;
     }
 
     private void OnDisable()
     {
         EventBus.Instance.levelFinished -= LoadNextLevel;
+        EventBus.Instance.playerDied -= PlayMenuMusic;
 
     }
 
     private void Start()
     {
+        SoundInstance.musicVolume = 0.7f;
+        SoundManager.Instance.StartMusic(SoundManager.firstLevelMusic);
+    }
+    private void PlayMenuMusic()
+    {
         SoundManager.Instance.StartMusic(SoundManager.menuMusic);
     }
-
     private void LoadNextLevel()
     {
         if(currentLevel == 2)
@@ -40,8 +47,10 @@ public class LevelManager : MonoBehaviour
             return;
         }
         SoundManager.Instance.PlaySound(SoundManager.teleportSound);
+        SoundManager.Instance.StartMusic(SoundManager.secondLevelMusic);
         levelLoader.LoadLevel(++currentLevel - 1);
         player.transform.position = levelLoader.currentLevel.GetComponentInChildren<SpawnPoint>().transform.position;
+        camera.transform.position = player.transform.position;
     }
 
     public void RestartGame()

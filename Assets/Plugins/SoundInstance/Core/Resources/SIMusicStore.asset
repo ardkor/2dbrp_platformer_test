@@ -13,12 +13,12 @@ MonoBehaviour:
   m_Name: SIMusicStore
   m_EditorClassIdentifier: 
   musics:
-  - name: slow
-    Song: {fileID: 8300000, guid: d73af48b2b44c234a8342847d70b5feb, type: 3}
   - name: action
     Song: {fileID: 8300000, guid: 12a57d6790ab55a47a62f8e80a1465e5, type: 3}
   - name: chill
     Song: {fileID: 8300000, guid: 17156c79598dfec41bf56a65fd44f3a6, type: 3}
+  - name: slow
+    Song: {fileID: 8300000, guid: d73af48b2b44c234a8342847d70b5feb, type: 3}
   soundEffects:
   - name: accelerate
     Sound: {fileID: 8300000, guid: 5134835eedf8cb241ab31c0cad4a91a1, type: 3}

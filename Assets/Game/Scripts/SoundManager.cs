@@ -40,7 +40,7 @@ public class SoundManager
 
     public void StartMusic(string musicName)
     {
-        SoundInstance.StartMusic(musicName, 0.7f);
+        SoundInstance.StartMusic(musicName, 1f);
     }
 
     public void SwitchMusic()

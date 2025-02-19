@@ -37,12 +37,14 @@ public class PlayerController : MonoBehaviour, IPlayerController
     {
         _playerAttacker.AttackingChanged += ChangeAttacking;
         EventBus.Instance.playerDied += DisableInput;
+        EventBus.Instance.gameFinished += DisableInput;
     }
 
     private void OnDisable()
     {
         _playerAttacker.AttackingChanged -= ChangeAttacking;
         EventBus.Instance.playerDied -= DisableInput;
+        EventBus.Instance.gameFinished -= DisableInput;
     }
 
     private void Update()

@@ -44,7 +44,7 @@ public class PlayerAttacker : MonoBehaviour
 
         foreach (Collider2D enemy in hitEnemies)
         {
-            Debug.Log("Попал во врага: " + enemy.name);
+            //Debug.Log("Попал во врага: " + enemy.name);
             SoundManager.Instance.PlaySound(SoundManager.hitSound);
             enemy.GetComponent<Enemy>()?.TakeDamage(attackDamage); 
         }
