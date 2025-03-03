@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class Enemy : MonoBehaviour
@@ -19,11 +17,9 @@ public class Enemy : MonoBehaviour
             PlayerController movement = player.GetComponent<PlayerController>();
             if (playerRb != null)
             {
-                //player.StartInvincible(knockbackDuration);
                 player.TakeDamage(damage, knockbackDuration);
                 movement.DisableMovementForKnockback(knockbackDuration);
                 Vector2 knockbackDirection = (collision.transform.position - transform.position).normalized;
-                //movement.AddVelocity(knockbackDirection * knockbackForce);
                 playerRb.AddForce(knockbackDirection * knockbackForce, ForceMode2D.Impulse);
             }
             

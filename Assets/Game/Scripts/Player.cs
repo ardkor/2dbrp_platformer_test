@@ -4,44 +4,64 @@ using System.Collections;
 
 public class Player : MonoBehaviour
 {
+    public bool Invincible => _invincible;
+    public bool Dead => _dead;
+
     [SerializeField] private int maxHealth = 100;
+    [SerializeField] private float fadeDuration = 0.5f;
+    [SerializeField] private float minAlpha = 0.5f;
+    [SerializeField] private float maxAlpha = 1f;
+    [SerializeField] private bool loopFade = true;       
+
+    private SpriteRenderer spriteRenderer;
+
     private int currentHealth;
     private bool _dead;
     private bool _invincible;
-    public SpriteRenderer spriteRenderer; // Ссылка на SpriteRenderer
-    public float fadeDuration = 0.5f;       // Время на изменение прозрачности
-    public float minAlpha = 0.5f;         // Минимальная прозрачность
-    public float maxAlpha = 1f;          // Максимальная прозрачность
-    public bool loopFade = true;         // Если true, эффект будет повторяться
-
     private float _invincibleDuration;
 
     private Coroutine twinkleCoroutine;
     private Coroutine fadeCoroutine;
-    public bool Invincible => _invincible;
-    public bool Dead => _dead;
+
+    public void TakeDamage(int damage, float knockbackDuration)
+    {
+        currentHealth -= damage;
+        currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
+        EventBus.Instance.playerDamaged?.Invoke(currentHealth, maxHealth);
+
+        if (currentHealth <= 0 && !_dead)
+        {
+            EventBus.Instance.playerDied?.Invoke();
+        }
+        else
+        {
+            StartInvincible(knockbackDuration);
+        }
+    }
+    private void StartInvincible(float knockbackDuration)
+    {
+        _invincibleDuration = knockbackDuration;
+        StartCoroutine(InvincibleTime());
+    }
 
     private void OnEnable()
     {
         EventBus.Instance.playerDied += EndInvincible;
         EventBus.Instance.playerDied += OnDied;
+        EventBus.Instance.gameFinished += OnGameFinished;
     }
 
     private void OnDisable()
     {
         EventBus.Instance.playerDied -= EndInvincible;
         EventBus.Instance.playerDied -= OnDied;
+        EventBus.Instance.gameFinished -= OnGameFinished;
     }
 
     void Start()
     {
         currentHealth = maxHealth;
         spriteRenderer = GetComponentInChildren<SpriteRenderer>();
-    }
-    public void StartInvincible(float knockbackDuration)
-    {
-        _invincibleDuration = knockbackDuration;
-        StartCoroutine(InvincibleTime());
     }
     private IEnumerator InvincibleTime()
     {
@@ -52,7 +72,14 @@ public class Player : MonoBehaviour
         yield return new WaitForSeconds(_invincibleDuration);
         EndInvincible();
     }
-    public void EndInvincible()
+    private void StartFading()
+    {
+        if (twinkleCoroutine == null)
+        {
+            twinkleCoroutine = StartCoroutine(FadeLoop());
+        }
+    }
+    private void EndInvincible()
     {
         loopFade = false;
         _invincible = false;
@@ -62,7 +89,22 @@ public class Player : MonoBehaviour
         color.a = maxAlpha;
         spriteRenderer.color = color;
     }
-    public IEnumerator FadeLoop()
+
+    private void StopFading()
+    {
+        if (twinkleCoroutine != null)
+        {
+            StopCoroutine(twinkleCoroutine);
+            twinkleCoroutine = null;
+        }
+        if (fadeCoroutine != null)
+        {
+            StopCoroutine(fadeCoroutine);
+            fadeCoroutine = null;
+        }
+    }
+
+    private IEnumerator FadeLoop()
     {
         while (loopFade)
         {
@@ -72,7 +114,7 @@ public class Player : MonoBehaviour
         }
     }
 
-    public IEnumerator ChangeAlpha(float targetAlpha, float duration)
+    private IEnumerator ChangeAlpha(float targetAlpha, float duration)
     {
         if (spriteRenderer == null) yield break;
 
@@ -89,51 +131,18 @@ public class Player : MonoBehaviour
             yield return null;
         }
 
-        // Устанавливаем точное значение прозрачности (исключаем ошибки округления)
         color.a = targetAlpha;
         spriteRenderer.color = color;
-    }
-
-    public void StopFading()
-    {
-        if (twinkleCoroutine != null)
-        {
-            StopCoroutine(twinkleCoroutine);
-            twinkleCoroutine = null;
-        }
-        if (fadeCoroutine != null)
-        {
-            StopCoroutine(fadeCoroutine);
-            fadeCoroutine = null;
-        }
-    }
-
-    public void StartFading()
-    {
-        if (twinkleCoroutine == null)
-        {
-            twinkleCoroutine = StartCoroutine(FadeLoop());
-        }
-    }
-    public void TakeDamage(int damage, float knockbackDuration)
-    {
-        currentHealth -= damage;
-        currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
-        EventBus.Instance.playerDamaged?.Invoke(currentHealth, maxHealth);
-
-        if (currentHealth <= 0 && !_dead)
-        {
-            EventBus.Instance.playerDied?.Invoke();
-        }
-        else 
-        {
-            StartInvincible(knockbackDuration);
-        }
     }
 
     private void OnDied()
     {
         _dead = true;
         SoundManager.Instance.PlaySound(SoundManager.deathSound);
+    }
+    private void OnGameFinished()
+    {
+        EndInvincible();
+        _invincible = true;
     }
 }

@@ -2,23 +2,44 @@ using System;
 using System.Collections;
 using UnityEngine;
 
+public struct FrameInput
+{
+    public bool JumpDown;
+    public bool JumpHeld;
+    public bool ShiftHeld;
+    public Vector2 Move;
+}
+
+public interface IPlayerController
+{
+    public event Action<bool, float> GroundedChanged;
+
+    public event Action Jumped;
+    public Vector2 FrameInput { get; }
+}
+
 [RequireComponent(typeof(Rigidbody2D), typeof(Collider2D))]
 public class PlayerController : MonoBehaviour, IPlayerController
 {
-    [SerializeField] private ScriptableStats _stats;
-    private Rigidbody2D _rb;
-    private CapsuleCollider2D _col;
-    private FrameInput _frameInput;
-    private Vector2 _frameVelocity;
-    private bool _cachedQueryStartInColliders;
 
     public Vector2 FrameInput => _frameInput.Move;
+
     public event Action<bool, float> GroundedChanged;
     public event Action Jumped;
 
-    private float _time;
-    private bool _isAttacking;
+    [SerializeField] private ScriptableStats _stats;
+
     private PlayerAttacker _playerAttacker;
+    private Rigidbody2D _rb;
+    private CapsuleCollider2D _col;
+
+    private FrameInput _frameInput;
+    private Vector2 _frameVelocity;
+
+    private float _time;
+
+    private bool _cachedQueryStartInColliders;
+    private bool _isAttacking;
     private bool _flipX;
     private bool _inputEnabled;
     private bool _knockbackEnabled;
@@ -55,7 +76,7 @@ public class PlayerController : MonoBehaviour, IPlayerController
             GatherInput();
             HandleSpriteFlip();
         }
-        _playerAttacker.UpdateFlipped(_flipX);
+        _playerAttacker.SetAttackZoneFlip(_flipX);
     }
     private void DisableInput()
     {
@@ -247,28 +268,10 @@ public class PlayerController : MonoBehaviour, IPlayerController
             _frameVelocity.y = Mathf.MoveTowards(_frameVelocity.y, -_stats.MaxFallSpeed, inAirGravity * Time.fixedDeltaTime);
         }
     }
-
-/*    private Vector2 _addedVelocity;
-    public void AddVelocity(Vector2 velocity)
-    {
-        _addedVelocity = velocity;
-    }*/
     #endregion
 
     private void ApplyMovement() => _rb.velocity = _frameVelocity;
-    /*{
-        if (_addedVelocity.magnitude > 0)
-        {
-            _rb.velocity = _addedVelocity + _frameVelocity; //new Vector2(_addedVelocity.x + _frameVelocity.x, _rb.velocity.y + _frameVelocity.y);
-        }
-        else
-        {
-            _rb.velocity = _frameVelocity;
-            _addedVelocity = new Vector2(0, 0);
-        }
-    }*/
     private void ApplyGravity() => _rb.velocity = new Vector2(_rb.velocity.x, _frameVelocity.y);
-    //private void ApplyAddedVelocity() => _rb.velocity = _addedVelocity + _frameVelocity;
 
 #if UNITY_EDITOR
     private void OnValidate()
@@ -278,18 +281,3 @@ public class PlayerController : MonoBehaviour, IPlayerController
 #endif
 }
 
-public struct FrameInput
-{
-    public bool JumpDown;
-    public bool JumpHeld;
-    public bool ShiftHeld;
-    public Vector2 Move;
-}
-
-public interface IPlayerController
-{
-    public event Action<bool, float> GroundedChanged;
-
-    public event Action Jumped;
-    public Vector2 FrameInput { get; }
-}

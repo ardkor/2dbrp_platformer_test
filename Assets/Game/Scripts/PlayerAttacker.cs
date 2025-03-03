@@ -4,27 +4,22 @@ using UnityEngine;
 
 public class PlayerAttacker : MonoBehaviour
 {
-    public Transform attackPoint; // Точка удара
-    public float attackRange = 0.5f; // Радиус удара
-    public LayerMask enemyLayer; // Слой врагов
-    public int attackDamage = 20; // Урон атаки
-    public float attackDuration = 0.6f; // Время действия атаки
-
-    private bool isAttacking = false; // Чтобы не спамить атаку
-
     public event Action<bool> AttackingChanged;
-    private Vector3 attackPosition;
 
-    private float attackDelay = 0.5f;
-    private bool _flipped; 
+    [SerializeField] private Transform attackPoint; 
+    [SerializeField] private float attackRange = 0.5f; 
+    [SerializeField] private LayerMask enemyLayer;
+    [SerializeField] private int attackDamage = 20;
+    [SerializeField] private float attackDuration = 0.67f; 
 
-    private void Start()
+    private Vector3 _attackPosition;
+    private float _attackDelay = 0.5f;
+    private bool _isAttacking = false; 
+    private bool _isAttackZoneOnLeft;
+
+    public void SetAttackZoneFlip(bool flipped)
     {
-        attackPosition = attackPoint.position;
-    }
-    public void UpdateFlipped(bool flipped) 
-    {
-        _flipped = flipped;
+        _isAttackZoneOnLeft = flipped;
     }
     public void PerformAttack()
     {
@@ -32,27 +27,31 @@ public class PlayerAttacker : MonoBehaviour
         StartCoroutine(AttackCoroutine());
     }
 
+    private void Start()
+    {
+        _attackPosition = attackPoint.position;
+    }
+
     private IEnumerator AttackCoroutine()
     {
-        isAttacking = true;
-        AttackingChanged?.Invoke(isAttacking);
+        _isAttacking = true;
+        AttackingChanged?.Invoke(_isAttacking);
 
-        yield return new WaitForSeconds(attackDelay);
-        attackPosition = _flipped ? new Vector3(transform.position.x + (transform.position.x - attackPoint.position.x), attackPoint.position.y) : attackPoint.position;
+        yield return new WaitForSeconds(_attackDelay);
+        _attackPosition = _isAttackZoneOnLeft ? new Vector3(transform.position.x + (transform.position.x - attackPoint.position.x), attackPoint.position.y) : attackPoint.position;
 
-        Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(attackPosition, attackRange, enemyLayer);
+        Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(_attackPosition, attackRange, enemyLayer);
 
         foreach (Collider2D enemy in hitEnemies)
         {
-            //Debug.Log("Попал во врага: " + enemy.name);
             SoundManager.Instance.PlaySound(SoundManager.hitSound);
             enemy.GetComponent<Enemy>()?.TakeDamage(attackDamage); 
         }
 
-        yield return new WaitForSeconds(attackDuration - attackDelay);
+        yield return new WaitForSeconds(attackDuration - _attackDelay);
 
-        isAttacking = false;
-        AttackingChanged?.Invoke(isAttacking);
+        _isAttacking = false;
+        AttackingChanged?.Invoke(_isAttacking);
     }
 
     private void OnDrawGizmosSelected()
@@ -61,6 +60,6 @@ public class PlayerAttacker : MonoBehaviour
             return;
 
         Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(attackPosition, attackRange); 
+        Gizmos.DrawWireSphere(_attackPosition, attackRange); 
     }
 }

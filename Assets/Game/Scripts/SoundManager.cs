@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class SoundManager
@@ -34,7 +32,6 @@ public class SoundManager
     {
         //                                   AudioClip  Transform Volume Is3D   Randomization
         //SoundInstance.InstantiateOnTransform(Clip_Fire, transform, -1, false, SoundInstance.Randomization.Medium);
-        // Playing from the library would be like this:
         SoundInstance.InstantiateOnPos(SoundInstance.GetClipFromLibrary(soundName), new Vector3(), 1.0f, false, SoundInstance.Randomization.Medium);
     }
 

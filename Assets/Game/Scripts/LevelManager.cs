@@ -1,20 +1,17 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine.SceneManagement;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class LevelManager : MonoBehaviour
 {
-    public Player player;
-    public Camera camera;
+    [SerializeField] private Player player;
+    [SerializeField] private Transform _camera;
+    [SerializeField] private LevelLoader levelLoader;
 
-    public LevelLoader levelLoader;
     private int currentLevel;
 
     private void Awake()
     {
-        currentLevel = 0;
-        LoadNextLevel();
+        
     }
 
     private void OnEnable()
@@ -32,6 +29,8 @@ public class LevelManager : MonoBehaviour
 
     private void Start()
     {
+        currentLevel = 0;
+        LoadNextLevel();
         SoundInstance.musicVolume = 0.7f;
         SoundManager.Instance.StartMusic(SoundManager.firstLevelMusic);
     }
@@ -49,8 +48,10 @@ public class LevelManager : MonoBehaviour
         SoundManager.Instance.PlaySound(SoundManager.teleportSound);
         SoundManager.Instance.StartMusic(SoundManager.secondLevelMusic);
         levelLoader.LoadLevel(++currentLevel - 1);
+        //_camera = c.transform;
+        levelLoader.currentLevel.GetComponentInChildren<ParallaxEffect>().Initialize();
         player.transform.position = levelLoader.currentLevel.GetComponentInChildren<SpawnPoint>().transform.position;
-        camera.transform.position = player.transform.position;
+        Camera.main.transform.position = player.transform.position;
     }
 
     public void RestartGame()

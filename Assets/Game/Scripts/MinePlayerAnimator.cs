@@ -2,6 +2,13 @@ using UnityEngine;
 
 public class MinePlayerAnimator : MonoBehaviour
 {
+
+    private static readonly int Died = Animator.StringToHash("Died");
+    private static readonly int MeleeAttackKey = Animator.StringToHash("MeleeAttack1");
+    private static readonly int GroundedKey = Animator.StringToHash("Grounded");
+    private static readonly int IdleSpeedKey = Animator.StringToHash("IdleSpeed");
+    private static readonly int JumpKey = Animator.StringToHash("Jump");
+
     [Header("References")]
     [SerializeField]
     private Animator _anim;
@@ -105,10 +112,4 @@ public class MinePlayerAnimator : MonoBehaviour
     {
         _anim.SetBool(MeleeAttackKey, isAttacking);
     }
-
-    private static readonly int Died = Animator.StringToHash("Died");
-    private static readonly int MeleeAttackKey = Animator.StringToHash("MeleeAttack1");
-    private static readonly int GroundedKey = Animator.StringToHash("Grounded");
-    private static readonly int IdleSpeedKey = Animator.StringToHash("IdleSpeed");
-    private static readonly int JumpKey = Animator.StringToHash("Jump");
 }
